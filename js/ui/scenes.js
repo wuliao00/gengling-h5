@@ -12,6 +12,7 @@ import { Save } from '../game/save.js';
 import { Sfx, Bgm } from '../game/sfx.js';
 import { DevGuard } from '../game/devguard.js';
 import { Haptics } from '../game/haptics.js';
+import * as Tele from '../game/telemetry.js';
 
 // Q 版立绘便捷封装（画进指定 canvas）
 function drawAvatarInto(canvas, charId, size, opts) {
@@ -1054,6 +1055,7 @@ function openDevPanel(sc) {
       <button class="btn btn-soft" id="devRes">💰 资源拉满（金币/体力/道具/碎片）</button>
       <button class="btn btn-soft" id="devChar">🌟 全角色解锁+Lv30+满星（解锁隐藏章）</button>
       <button class="btn btn-soft" id="devInfo">🔍 查看存档状态</button>
+      <button class="btn btn-soft" id="devTele">📊 关卡体验报表（埋点）</button>
       <button class="btn btn-soft" id="devGuard">🔒 调试守卫状态</button>
       <button class="btn btn-red" id="devOff">🚫 关闭开发者模式</button>
     </div>`, [{ text: '收起', cls: 'btn-ghost' }]);
@@ -1087,6 +1089,20 @@ function openDevPanel(sc) {
     Meta.persist();
     toast('🌟 全角色满配！隐藏章节已解锁');
     mask.remove(); sc.show('home');
+  };
+  mask.querySelector('#devTele').onclick = () => {
+    const rep = Tele.report();
+    modalBox(`
+      <div class="mb-title">📊 关卡体验报表</div>
+      <pre class="tele-rep">${esc(rep)}</pre>`,
+      [
+        { text: '清空埋点', cls: 'btn-red', fn: () => { Tele.clear(); toast('埋点已清空'); } },
+        { text: '复制全文', cls: 'btn-soft', fn: () => {
+            try { navigator.clipboard.writeText(rep); toast('已复制到剪贴板'); }
+            catch (_) { toast('这个环境不让复制，手动选吧'); }
+          } },
+        { text: '收起', cls: 'btn-ghost' },
+      ]);
   };
   mask.querySelector('#devInfo').onclick = () => {
     const st = Meta.get();

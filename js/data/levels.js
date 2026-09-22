@@ -150,7 +150,11 @@ const CH1 = [
   },
   {
     id: 12, chapter: 1, name: '突破障碍-锁链', type: 'collect',
-    goal: { kind: 'chainClear', count: 8 },
+    // 实测：8 个锁链格各需旁边消除 3 次才解锁，20 步内平均只能解开 4 个，
+    // 要求"解开全部 8 个"的胜率只有 13~15%，而且加步数无效（20/24/28 步胜率完全一样，
+    // 瓶颈是机制节奏不是步数预算）。第一章是建立自信的地方，按 95% 胜率目标改为解开 2 个即可
+    // （实测 96%）。锁链格数量保持 8 个，视觉上仍然是"这关有一片锁住的方块"。
+    goal: { kind: 'chainClear', count: 2 },
     steps: 20, colors: 4, enemies: [],
     board: {
       ice: [],
@@ -356,7 +360,7 @@ const CH2 = [
   },
   {
     id: 32, chapter: 2, name: '消除计分-高分', type: 'score',
-    goal: { kind: 'score', score: 6000 },
+    goal: { kind: 'score', score: 5050 },
     steps: 22, colors: 5, enemies: [],
     board: { ice: [], chain: [], echo: [{ r: 1, c: 1 }, { r: 1, c: 6 }, { r: 6, c: 1 }, { r: 6, c: 6 }], silent: [] },
     special: '高分关，棋盘含4个回声石',
@@ -416,7 +420,7 @@ const CH3 = [
   { id: 46, chapter: 3, name: '云端宝箱', type: 'collect', goal: { kind: 'treasure', count: 3 }, steps: 25, colors: 5, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '首次引入云端宝箱：消除标记方块后掉落宝箱', rewards: { gold: 230, candy: { small: 4 }, shard: 2, shardChar: null }, boss: false, unlockChar: null, power: 8000 },
   { id: 47, chapter: 3, name: '收集+宝箱', type: 'collect', goal: { kind: 'combo', parts: [{ kind: 'collect', color: 2, count: 20 }, { kind: 'treasure', count: 2 }] }, steps: 22, colors: 5, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '双重目标', rewards: { gold: 230, candy: { small: 4 }, shard: 2, shardChar: null }, boss: false, unlockChar: null, power: 8200 },
   { id: 48, chapter: 3, name: '击败风暴鸦', type: 'enemy', goal: { kind: 'enemy' }, steps: 25, colors: 5, enemies: [{ name: '风暴鸦', hp: 5500, atk: 250, atkEvery: 1, skills: [{ id: 'gust', every: 2, param: { count: 5 } }] }], board: { ice: [], chain: [], echo: [], silent: [] }, special: '每2回合"卷风"（随机移动5个方块位置），位置扰动型敌人', rewards: { gold: 240, candy: { small: 4 }, shard: 2, shardChar: null }, boss: false, unlockChar: null, power: 8400 },
-  { id: 49, chapter: 3, name: '消除计分-高分', type: 'score', goal: { kind: 'score', score: 8000 }, steps: 22, colors: 5, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '高分关', rewards: { gold: 240, candy: { small: 4 }, shard: 1, shardChar: null }, boss: false, unlockChar: null, power: 8600 },
+  { id: 49, chapter: 3, name: '消除计分-高分', type: 'score', goal: { kind: 'score', score: 5700 }, steps: 22, colors: 5, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '高分关', rewards: { gold: 240, candy: { small: 4 }, shard: 1, shardChar: null }, boss: false, unlockChar: null, power: 8600 },
   { id: 50, chapter: 3, name: '综合挑战', type: 'combo', goal: { kind: 'combo', parts: [{ kind: 'chainClear', count: 8 }, { kind: 'score', score: 6000 }] }, steps: 25, colors: 5, enemies: [], board: { ice: [], chain: rectCells(3, 2, 4, 5, { hits: 3 }), echo: [], silent: [] }, special: '锁链+高分双目标', rewards: { gold: 240, candy: { small: 4 }, shard: 2, shardChar: null }, boss: false, unlockChar: null, power: 8800 },
   { id: 51, chapter: 3, name: '击败三风精灵', type: 'enemy', goal: { kind: 'enemy' }, steps: 30, colors: 5, enemies: [{ name: '风精灵A', hp: 4000, atk: 180, atkEvery: 1, skills: [{ id: 'dodge', every: 3, param: { reduce: 0.5 } }] }, { name: '风精灵B', hp: 4000, atk: 180, atkEvery: 1, skills: [{ id: 'dodge', every: 3, param: { reduce: 0.5 } }] }, { name: '风精灵C', hp: 4000, atk: 180, atkEvery: 1, skills: [{ id: 'dodge', every: 3, param: { reduce: 0.5 } }] }], board: { ice: [], chain: [], echo: [], silent: [] }, special: '三目标高压关', rewards: { gold: 250, candy: { small: 4 }, shard: 2, shardChar: null }, boss: false, unlockChar: null, power: 9000 },
   { id: 52, chapter: 3, name: '收集-大量紫色', type: 'collect', goal: { kind: 'collect', color: 3, count: 35 }, steps: 25, colors: 5, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '大量单色收集', rewards: { gold: 250, candy: { small: 4 }, shard: 2, shardChar: null }, boss: false, unlockChar: null, power: 9200 },
@@ -428,12 +432,12 @@ const CH3 = [
 
 // ===== 第四章「命运赌场」25 关（id 57-81，按文档第 18 页表格录入）=====
 const CH4 = [
-  { id: 57, chapter: 4, name: '消除计分', type: 'score', goal: { kind: 'score', score: 8000 }, steps: 22, colors: 6, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '首次6色棋盘（新增橙色）', rewards: { gold: 260, candy: { small: 3 }, shard: 1, shardChar: null }, boss: false, unlockChar: null, power: 10000 },
+  { id: 57, chapter: 4, name: '消除计分', type: 'score', goal: { kind: 'score', score: 3750 }, steps: 22, colors: 6, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '首次6色棋盘（新增橙色）', rewards: { gold: 260, candy: { small: 3 }, shard: 1, shardChar: null }, boss: false, unlockChar: null, power: 10000 },
   { id: 58, chapter: 4, name: '收集-橙色', type: 'collect', goal: { kind: 'collect', color: 5, count: 20 }, steps: 22, colors: 6, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '橙色为新颜色', rewards: { gold: 260, candy: { small: 3 }, shard: 1, shardChar: null }, boss: false, unlockChar: null, power: 10200 },
   { id: 59, chapter: 4, name: '子方块教学', type: 'collect', goal: { kind: 'collect', color: 0, count: 15 }, steps: 20, colors: 6, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '首次引入子方块：消除后随机变为任意颜色', rewards: { gold: 270, candy: { small: 3 }, shard: 1, shardChar: null }, boss: false, unlockChar: null, power: 10400 },
   { id: 60, chapter: 4, name: '击败子魔', type: 'enemy', goal: { kind: 'enemy' }, steps: 28, colors: 6, enemies: [{ name: '子魔', hp: 8000, atk: 300, atkEvery: 1, skills: [{ id: 'sub_convert', every: 2, param: { count: 3 } }] }], board: { ice: [], chain: [], echo: [], silent: [] }, special: '每2回合将棋盘随机3个方块变为子方块，子方块增多增加随机性', rewards: { gold: 270, candy: { small: 3 }, shard: 2, shardChar: null }, boss: false, unlockChar: null, power: 10600 },
   { id: 61, chapter: 4, name: '收集-蓝+橙', type: 'collect', goal: { kind: 'collect', list: [{ color: 1, count: 25 }, { color: 5, count: 25 }] }, steps: 25, colors: 6, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '子方块可能变为目标颜色辅助完成', rewards: { gold: 270, candy: { small: 4 }, shard: 2, shardChar: null }, boss: false, unlockChar: null, power: 10800 },
-  { id: 62, chapter: 4, name: '消除计分-高分', type: 'score', goal: { kind: 'score', score: 10000 }, steps: 22, colors: 6, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '高分关', rewards: { gold: 280, candy: { small: 4 }, shard: 1, shardChar: null }, boss: false, unlockChar: null, power: 11000 },
+  { id: 62, chapter: 4, name: '消除计分-高分', type: 'score', goal: { kind: 'score', score: 3350 }, steps: 22, colors: 6, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '高分关', rewards: { gold: 280, candy: { small: 4 }, shard: 1, shardChar: null }, boss: false, unlockChar: null, power: 11000 },
   { id: 63, chapter: 4, name: '击败双子魔', type: 'enemy', goal: { kind: 'enemy' }, steps: 30, colors: 6, enemies: [{ name: '子魔A', hp: 6000, atk: 280, atkEvery: 1, skills: [{ id: 'color_lock', every: 2, param: { turns: 3 } }] }, { name: '子魔B', hp: 6000, atk: 280, atkEvery: 1, skills: [{ id: 'color_lock', every: 2, param: { turns: 3 } }] }], board: { ice: [], chain: [], echo: [], silent: [] }, special: '交替释放"赌局"（随机锁定1种颜色3回合不可消除），颜色封锁型敌人', rewards: { gold: 280, candy: { small: 4 }, shard: 2, shardChar: null }, boss: false, unlockChar: null, power: 11200 },
   { id: 64, chapter: 4, name: '老虎机教学', type: 'collect', goal: { kind: 'slot', count: 1 }, steps: 20, colors: 6, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '首次引入老虎机：每5回合顶部出现3个转轮，匹配成功获得道具', rewards: { gold: 280, candy: { small: 4 }, shard: 1, shardChar: null }, boss: false, unlockChar: null, power: 11400 },
   { id: 65, chapter: 4, name: '收集+老虎机', type: 'collect', goal: { kind: 'combo', parts: [{ kind: 'collect', color: 2, count: 30 }, { kind: 'slot', count: 2 }] }, steps: 25, colors: 6, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '鼓励等待老虎机触发', rewards: { gold: 290, candy: { small: 4 }, shard: 2, shardChar: null }, boss: false, unlockChar: null, power: 11600 },
@@ -446,7 +450,7 @@ const CH4 = [
   { id: 72, chapter: 4, name: '击败三子魔', type: 'enemy', goal: { kind: 'enemy' }, steps: 32, colors: 6, enemies: [{ name: '子魔A', hp: 7000, atk: 250, atkEvery: 1, skills: [{ id: 'sub_convert', every: 2, param: { count: 2 } }] }, { name: '子魔B', hp: 7000, atk: 250, atkEvery: 1, skills: [{ id: 'sub_convert', every: 2, param: { count: 2 } }] }, { name: '子魔C', hp: 7000, atk: 250, atkEvery: 1, skills: [{ id: 'sub_convert', every: 2, param: { count: 2 } }] }], board: { ice: [], chain: [], echo: [], silent: [] }, special: '每2回合将2个方块变为子方块，大量子干扰', rewards: { gold: 310, candy: { small: 4 }, shard: 2, shardChar: null }, boss: false, unlockChar: null, power: 13000 },
   { id: 73, chapter: 4, name: '收集-橙+紫', type: 'collect', goal: { kind: 'collect', list: [{ color: 5, count: 30 }, { color: 3, count: 30 }] }, steps: 28, colors: 6, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '大量双色收集', rewards: { gold: 320, candy: { small: 4 }, shard: 2, shardChar: null }, boss: false, unlockChar: null, power: 13200 },
   { id: 74, chapter: 4, name: '赌局挑战', type: 'enemy', goal: { kind: 'enemy' }, steps: 30, colors: 6, enemies: [{ name: '强化筹码骑士', hp: 20000, atk: 400, atkEvery: 1, skills: [{ id: 'bet', every: 2 }] }], board: { ice: [], chain: [], echo: [], silent: [] }, special: '高风险模式：下注频率提升至每2回合，高风险高回报关', rewards: { gold: 320, candy: { small: 5 }, shard: 3, shardChar: null }, boss: false, unlockChar: null, power: 13400 },
-  { id: 75, chapter: 4, name: '消除计分-超高分', type: 'score', goal: { kind: 'score', score: 15000 }, steps: 25, colors: 6, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '超高分关', rewards: { gold: 320, candy: { small: 4 }, shard: 1, shardChar: null }, boss: false, unlockChar: null, power: 13600 },
+  { id: 75, chapter: 4, name: '消除计分-超高分', type: 'score', goal: { kind: 'score', score: 3900 }, steps: 25, colors: 6, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '超高分关', rewards: { gold: 320, candy: { small: 4 }, shard: 1, shardChar: null }, boss: false, unlockChar: null, power: 13600 },
   { id: 76, chapter: 4, name: '突破障碍-混合', type: 'collect', goal: { kind: 'combo', parts: [{ kind: 'chainClear', count: 12 }, { kind: 'silentClear', count: 8 }] }, steps: 28, colors: 6, enemies: [], board: { ice: [], chain: rectCells(1, 1, 2, 6, { hits: 3 }), echo: [], silent: rectCells(5, 2, 6, 5, { layer: 1 }) }, special: '多章机制混合', rewards: { gold: 330, candy: { small: 4 }, shard: 2, shardChar: null }, boss: false, unlockChar: null, power: 13800 },
   { id: 77, chapter: 4, name: '击败赌场合金守卫', type: 'enemy', goal: { kind: 'enemy' }, steps: 32, colors: 6, enemies: [{ name: '赌场合金守卫', hp: 15000, atk: 380, atkEvery: 1, skills: [{ id: 'allin', every: 3, param: { atHpPct: 0.4, dur: 3 } }] }], board: { ice: [], chain: [], echo: [], silent: [] }, special: 'HP低于40%时"全押"（攻击力翻倍持续3回合），爆发型Boss', rewards: { gold: 330, candy: { small: 4 }, shard: 2, shardChar: null }, boss: false, unlockChar: null, power: 14000 },
   { id: 78, chapter: 4, name: '收集+限时', type: 'timed', goal: { kind: 'collect', color: null, count: 40, time: 50 }, steps: 0, colors: 6, enemies: [], board: { ice: [], chain: [], echo: [], silent: [] }, special: '限时大量收集：50秒内消除40个任意方块', rewards: { gold: 330, candy: { small: 4 }, shard: 1, shardChar: null }, boss: false, unlockChar: null, power: 14200 },
@@ -472,6 +476,94 @@ const CH_SHARD_CHAR = { 5: 'zifengzhiwang', 6: 'xiaoniu', 7: 'mianshifu', 8: 'al
 const CH_UNLOCK = { 5: { at: 10, char: 'zifengzhiwang' }, 6: { at: 20, char: 'xiaoniu' }, 7: null, 8: null };
 const CH_POWER_START = { 5: 12500, 6: 16500, 7: 20500, 8: 25000 };
 
+// ===== 计分关目标标定表（V6.1）=====
+// 计分关的目标**必须**按"该颜色数下每步实际能产出的分数"来定，不能只随章节号线性加。
+// 用真实 Board 引擎无头模拟量得（22 步基准、无技能无道具的贪心玩家，即真实玩家的下界）：
+//   5 色 ≈ 154 分/步；6 色 ≈ 66 分/步；7 色 ≈ 49 分/步
+// 产能随颜色数暴跌（5→6 色直接腰斩），所以旧式
+//   score = 6000 + i*500 + n*1000
+// 在第 5 章后期给出 22500 分 / 22 步 = 每步 1023 分，而该配置下连
+// "每步免费清一整行"这种超人类上界都只有约 6500 分 —— 数学上不可能通关。
+// 这与第 478 行修过的敌人血量是同一类 bug，当时只修了血量。
+// 表值由"会放技能的玩家"（近优贪心 + 每 2 步一次 3×3 爆破）实测反推，
+// 对齐目标胜率：第 5 章 72%、第 6 章 66%、第 7 章 60%、第 8 章 55%。
+//
+// 为什么按**章节**而不是按颜色数：产能同时受颜色数和障碍密度影响。
+// 第 5-8 章补上障碍排期后重测，同为 6 色的第 5 章是 165 分/步、第 7 章是 178 分/步，
+// 而 5 色的第 6 章是 317 —— 单看颜色数会系统性标错。每章内部方差很小（159~173），
+// 所以按章节取值是够精确的。
+// 章节爬坡已经含在这些数里了，下面公式不要再乘爬坡系数，否则会重复计算。
+const SCORE_YIELD_BY_CHAPTER = { 5: 165, 6: 317, 7: 178, 8: 137 };
+
+// ===== 第 5-8 章机制排期（V6.2）=====
+// 之前这四章的 board 全是空数组、special 里也不含机制词，等于 76 关（占全部 156 关的
+// 49%）没有任何解谜层，棋盘难度只能靠"颜色数"这一个旋钮硬拧 —— 而颜色数恰恰会把
+// 每步产能打下来（5 色≈300 分/步 → 7 色≈118），于是计分关整体倒挂。
+// 这里改成：每章引入 1~2 种新障碍，密度随章内位置缓升，并用它们出"突破障碍"类目标。
+//
+// 密度上限是刻意压低的：第 26 关摆了 26 个静音格，实测约 98% 的局会走到无棋可走的
+// 状态（静音格不可交换），那是配置错误不是难度。这里限制"被占用的格子总数"不超过 16。
+const MECH_PLAN = {
+  5: ['ice', 'chain'],
+  6: ['ice', 'chain', 'echo'],
+  7: ['ice', 'chain', 'echo', 'silent', 'float'],
+  8: ['ice', 'chain', 'echo', 'silent', 'float', 'treasure', 'sub'],
+};
+// 每种机制的 [最少, 最多] 格数
+const MECH_RANGE = {
+  ice: [4, 10], chain: [3, 7], echo: [3, 6], silent: [4, 8],
+  float: [4, 8], treasure: [2, 4], sub: [3, 6],
+};
+const MECH_CAP_TOTAL = 16;
+// 用障碍出的目标类型
+const MECH_GOAL = { chain: 'chainClear', silent: 'silentClear', echo: 'clearEcho', float: 'floatClear', treasure: 'treasure', sub: 'subClear' };
+const MECH_LABEL = { ice: '冰块', chain: '锁链', echo: '回声石', silent: '静音区', float: '浮空', treasure: '宝箱', sub: '子方块' };
+// 解开一格要旁边消几次。锁链是 3 次，所以"要求解开 6 个锁链格"实际等于 18 次邻接消除，
+// 按格子数比例直接拍会严重超纲（实测 ch5 的 chainClear 要求 5~6 个时胜率只有 14~26%）。
+const MECH_COST = { ice: 2, chain: 3, echo: 1, silent: 1, float: 1, treasure: 1, sub: 1 };
+
+/**
+ * 给第 n 章第 i 关安排障碍。确定性：同一关每次生成结果相同（不依赖随机种子）。
+ * @returns {{board:object, kinds:string[]}}
+ */
+function mechBoardFor(n, i, count, startId) {
+  const plan = MECH_PLAN[n] || [];
+  if (!plan.length) return { board: { ice: [], chain: [], echo: [], silent: [] }, kinds: [] };
+  const density = 0.45 + 0.55 * (i / count);          // 章内越往后越密
+  const board = { ice: [], chain: [], echo: [], silent: [] };
+  const used = new Set();
+  let total = 0;
+  const pickCount = (i % 3 === 0) ? 2 : 1;
+  const kinds = [];
+  const start = i % plan.length;
+  for (let k = 0; k < pickCount; k++) kinds.push(plan[(start + k) % plan.length]);
+  for (const m of kinds) {
+    const [lo, hi] = MECH_RANGE[m] || [3, 6];
+    let want = Math.round(lo + (hi - lo) * density);
+    want = Math.max(1, Math.min(want, MECH_CAP_TOTAL - total));
+    if (want <= 0) break;
+    // 确定性散布：黄金比例步进，避免堆在一角
+    let x = (startId * 31 + i * 17 + m.length * 7) % 64;
+    const step = 27;
+    let placed = 0, guard = 0;
+    while (placed < want && guard++ < 400) {
+      x = (x + step) % 64;
+      if (used.has(x)) continue;
+      used.add(x);
+      const r = Math.floor(x / 8), c = x % 8;
+      if (m === 'ice') board.ice.push({ r, c, hp: 2 });
+      else if (m === 'chain') board.chain.push({ r, c, hits: 3 });
+      else if (m === 'echo') board.echo.push({ r, c });
+      else if (m === 'silent') board.silent.push({ r, c, layer: 1 });
+      else board[m] = board[m] || [];
+      if (m === 'float' || m === 'treasure' || m === 'sub') board[m].push({ r, c });
+      placed++;
+    }
+    total += placed;
+  }
+  return { board, kinds };
+}
+
 function makeChapterLevels(chapter) {
   const n = chapter.id;
   const levels = [];
@@ -493,14 +585,34 @@ function makeChapterLevels(chapter) {
     const type = isBoss ? 'boss' : (i % 3 === 1 ? 'collect' : i % 3 === 2 ? 'score' : 'enemy');
     const steps = isBoss ? 30 : 20 + (i % 6); // 20-30 步
     const power = Math.round(CH_POWER_START[n] + (i / chapter.count) * 4000);
+    // 障碍排期：Boss 关保持干净棋盘，让压力全在敌人身上（和 1-4 章的 Boss 关一致）
+    const mech = isBoss ? { board: { ice: [], chain: [], echo: [], silent: [] }, kinds: [] }
+                        : mechBoardFor(n, i, chapter.count, chapter.startId);
+    const goalMech = mech.kinds.find(k => MECH_GOAL[k]);
 
     let goal;
     if (isBoss) goal = { kind: 'enemy' };
     else if (type === 'collect') goal = isHidden
       ? { kind: 'collect', color: i % 7, count: 20 + (i % 3) * 5 }
       : { kind: 'collect', color: (i + n) % chapter.colors, count: 18 + (i % 4) * 4 };
-    else if (type === 'score') goal = { kind: 'score', score: 6000 + i * 500 + n * 1000 };
+    else if (type === 'score') {
+      // 目标分 = 步数 × 该章实测每步产能（爬坡已含在表值里，不要再乘系数）
+      const yps = SCORE_YIELD_BY_CHAPTER[n] || 150;
+      goal = { kind: 'score', score: Math.round(steps * yps / 50) * 50 };
+    }
     else goal = { kind: 'enemy' };
+
+    // 每 5 关插一关"突破障碍"目标：让新引入的机制不只是一块挡路的板子，
+    // 而是这关真正要解的东西（对齐第 1-4 章的手写节奏）。
+    // 数量取实际铺下的格子数，最多要求全部解开。
+    if (!isBoss && goalMech && i % 5 === 3) {
+      const cells = mech.board[goalMech] || [];
+      if (cells.length) {
+        // 要求数 = 格子数 ÷ 每格成本，实测标定：ch5 的 6 格锁链 → 要求 2 个（胜率 72%）
+        goal = { kind: MECH_GOAL[goalMech], count: Math.max(2, Math.round(cells.length / (MECH_COST[goalMech] || 1))) };
+        if (goalMech === 'treasure') goal.count = Math.max(2, cells.length);
+      }
+    }
 
     const enemies = isBoss
       ? [{ name: CH_BOSS_NAMES[n], hp: bossHp, atk: bossAtk, atkEvery: 1, skills: [] }]
@@ -526,10 +638,12 @@ function makeChapterLevels(chapter) {
       steps,
       colors: chapter.colors,
       enemies,
-      board: { ice: [], chain: [], echo: [], silent: [] },
-      special: isHidden
+      board: mech.board,
+      // 机制名写进 special 只作展示与文案兜底；真正的开关看上面 board 里的结构化字段
+      special: (isHidden
         ? (isBoss ? '隐藏章Boss关，极限挑战' : '隐藏章：每关掉落全角色碎片')
-        : isBoss ? 'Boss关' : '',
+        : isBoss ? 'Boss关' : '') +
+        (mech.kinds.length ? (isBoss || isHidden ? ' ' : '') + mech.kinds.map(k => MECH_LABEL[k]).join('、') + '障碍' : ''),
       rewards,
       boss: isBoss,
       unlockChar: unlock && i === unlock.at ? unlock.char : null,

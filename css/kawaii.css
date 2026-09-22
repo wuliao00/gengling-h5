@@ -756,10 +756,19 @@ h3.sec-title::before { background: linear-gradient(180deg, var(--honey), var(--m
   font-weight: 900; color: #7A4C00; text-align: center;
   white-space: normal; word-break: break-word;
 }
-.bt-items { flex-wrap: wrap; justify-content: center; gap: 5px; max-width: 100%; }
+/* 道具 dock：单行横滑，不再换行。
+   之前为了"不被左右裁切"改成 wrap，但带满 8 个道具会排成 3 行，
+   加上 3 技能 + 3 成员，dock 直接吃掉两百多 px，把棋盘挤到看不见（真机 Boss Rush 复现）。
+   单行 + 横向滚动把高度锁死在一行，剩下的空间全给棋盘。 */
+.bt-items {
+  flex-wrap: nowrap; justify-content: flex-start; max-width: 100%;
+  overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch; padding: 2px 2px 6px;
+}
+.bt-items::-webkit-scrollbar { display: none; }
 .item-btn {
   min-width: 40px; min-height: 34px; padding: 3px 7px;
-  font-size: 10.5px; border-radius: 12px;
+  font-size: 10.5px; border-radius: 12px; flex: none;
 }
 .item-btn b { font-size: 10px; }
 .item-btn .it-cnt { min-width: 16px; height: 16px; font-size: 9.5px; line-height: 16px; top: -5px; right: -5px; }

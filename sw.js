@@ -3,7 +3,9 @@
 //   代码/样式/文档（html・js・css・webmanifest）→ network-first，断网回退缓存。
 //     否则每次改皮肤/数值，老用户都会一直拿到旧缓存（cache-first 的坑）。
 //   图片等大资源 → cache-first（内容不变，省流量、可离线）。
-const CACHE = 'gengling-v12';   // v12：全场景紧凑化（一屏放下）+ AI 糖果背景分层 + 音效触点补全
+const CACHE = 'gengling-v17';   // v17：7 张角色立绘重修（糖果光泽风、纸糊王冠、已去水印）
+                                 // 图片走 cache-first，换素材必须 bump 这里，
+                                 // 否则老用户的旧缓存会永远供旧图。
 
 const SHELL = [
   './',
@@ -24,6 +26,7 @@ const SHELL = [
   './js/game/enemy-skills.js',
   './js/game/run-mode.js',
   './js/game/haptics.js',
+  './js/game/telemetry.js',
   './js/game/skills.js',
   './js/game/sfx.js',
   './js/game/devguard.js',

@@ -7,6 +7,7 @@ import { Sfx, Bgm } from './game/sfx.js';
 import { DevGuard } from './game/devguard.js';
 import { RunMode } from './game/run-mode.js';
 import { Haptics } from './game/haptics.js';
+import * as T from './game/telemetry.js';
 import { CHARACTERS } from './data/characters.js';
 import { ITEMS } from './data/items.js';
 import { BoardRenderer } from './ui/render.js';
@@ -59,7 +60,7 @@ const Game = {
     // 私有版这里是 "?dev=1" + 连点顶栏标题/首页 logo 5 次解锁，配 js/game/devguard.js 的
     // PBKDF2 口令校验、蜜罐令牌与诱饵密码做防爆破。那套东西一旦公开就等于把实现连 salt
     // 一起交出去，所以公开版既不渲染 🛠 按钮，也不接受任何解锁途径。
-    // 想在公开版里保留面板（例如方便别人跑测试），把下面注释掉、自行实现一个 verify() 即可。
+    // 想在公开版里保留面板（例如方便别人跑测试），自行实现一个 verify() 即可。
 
     // 调试入口：?goto=关卡id 直接解锁并进入该关编队（开发用）
     const goto = parseInt(new URLSearchParams(location.search).get('goto'), 10);
@@ -122,12 +123,24 @@ const Game = {
     if (this.highRisk) enemies.forEach(e => { e.hp = Math.round(e.hp * 2); });
     const lvl = Object.assign({}, level, { enemies });
 
-    // ===== 棋盘种子（浮空/宝箱/子方块，按关卡机制确定性生成）=====
+    // ===== 棋盘种子 =====
+    // ice/chain/echo/silent 用显式坐标（手写关要精确控制形状）；
+    // float/treasure/sub 用**数量**，由 _patternCells 随机铺在不与前面冲突的格子上。
+    //
+    // 原来这三个机制只能靠 sp.includes('浮空') 这种"解析中文描述串"来开关 ——
+    // 文案一改机制就静默消失，而且第 5-8 章是生成器产的，special 里根本不含机制词，
+    // 结果那 76 关一个机制都没有，棋盘难度全靠颜色数硬撑，进而把计分关搞崩。
+    // 中文串解析保留作兜底（第 1-4 章手写关没有结构化字段），两条路互不影响。
     const bd = level.board || {};
     const seedCells = { ice: bd.ice, chain: bd.chain, echo: bd.echo, silent: bd.silent };
-    if (sp.includes('浮空')) seedCells.float = this._patternCells(level.id * 31 + 5, 8, seedCells);
-    if (sp.includes('宝箱')) seedCells.treasure = this._patternCells(level.id * 17 + 3, 3, seedCells);
-    if (sp.includes('子方块')) seedCells.sub = this._patternCells(level.id * 13 + 11, 6, seedCells);
+    const seedMech = (arr, kw, salt, byText) => {
+      if (Array.isArray(arr) && arr.length) return arr;
+      const n = typeof arr === 'number' && arr > 0 ? arr : (sp.includes(kw) ? byText : 0);
+      return n > 0 ? this._patternCells(level.id * salt + 5, n, seedCells) : null;
+    };
+    const fl = seedMech(bd.float, '浮空', 31, 8); if (fl) seedCells.float = fl;
+    const tr = seedMech(bd.treasure, '宝箱', 17, 3); if (tr) seedCells.treasure = tr;
+    const sb = seedMech(bd.sub, '子方块', 13, 6); if (sb) seedCells.sub = sb;
     this.initialSubs = (seedCells.sub || []).length;
 
     this.board = new Board({
@@ -138,6 +151,7 @@ const Game = {
     this.battle = new Battle(lvl, this.team, this.board, rng);
     this.movesUsed = 0;
     this.stepsLeft = level.steps || 0;
+    this.reviveUsed = false;      // 近失复活每关限一次
     this.busy = false;
     this.pickMode = null;
     this.floatDrops = 0;
@@ -153,9 +167,11 @@ const Game = {
     const isBoss = level.boss || level.type === 'boss';
     const isTimed = (level.goal && level.goal.time) || level.type === 'timed';
     const battleTracks = ['normal', 'upbeat', 'combo'];
-    Bgm.play(isBoss ? 'boss' : isTimed ? 'time' : battleTracks[Math.abs(level.id || 1) % battleTracks.length]);
+    this._bgmKey = isBoss ? 'boss' : isTimed ? 'time' : battleTracks[Math.abs(level.id || 1) % battleTracks.length];
+    Bgm.play(this._bgmKey);
     if (isBoss) Sfx.play('boss');
     this._startTimer();
+    T.log('level_start', { level: level.id, steps: level.steps || 0, goal: level.goal && level.goal.kind, boss: !!isBoss });
     toast(`🎯 ${goalText(level)}`, 2400);
   },
 
@@ -260,6 +276,11 @@ const Game = {
 
       // 回合后处理：Boss技能特效/敌人冲撞/气流/老虎机/押注/行锁/雾
       if (!this.battle.state.over) await this._processTurn();
+
+      // 死局兜底：棋盘已无合法交换时自动洗牌。
+      // 没有这一步，静音区/锁链多的关（如第 26 关 26 个静音格）会出现
+      // "有步数、没棋可走"的软锁 —— 玩家只能干等步数耗尽，体验上等同被系统坑。
+      if (!this.battle.state.over) await this._ensureSolvable();
 
       this.refreshBattleHUD();
 
@@ -534,6 +555,24 @@ const Game = {
     }
   },
 
+  /**
+   * 死局检测与兜底。useHint() 的过滤条件已与 swap() 对齐（含 silent>0），
+   * 所以它返回 null 就是真的没棋可走。交给 board.ensurePlayable()：
+   * 先洗牌，洗不出来就松动一个静音格，保证一定有进展。
+   */
+  async _ensureSolvable() {
+    if (this.board.useHint()) return false;
+    const events = this.board.ensurePlayable();
+    if (!this.board.useHint()) { toast('棋盘卡住了，步数用完后本关结束…'); return false; }
+    if (events && events.length) {
+      await this.renderer.playEvents(events);
+      Sfx.play('shuffle');
+    }
+    toast('没有可消除的组合了——自动洗牌');
+    this._checkGoal();
+    return true;
+  },
+
   _checkGoal() {
     const g = this.level.goal || {};
     if (g.kind === 'enemy') {
@@ -776,7 +815,9 @@ const Game = {
     }
     // 锁色提示：被锁的颜色不参与匹配，必须让玩家看得见
     const lock = this.board && this.board.lockedColor;
-    const mw2 = document.getElementById('btMembers');
+    // 提示条挂在敌人卡正下方那一行（一直可见）。原先塞进 #btMembers 成员卡里，
+    // 位置太隐蔽，玩家只会觉得"这个颜色坏了"。
+    const mw2 = document.querySelector('.bt-goalbar');
     let lt = document.getElementById('lockTag');
     if (lock && mw2) {
       if (!lt) {
@@ -828,7 +869,7 @@ const Game = {
       if (left <= 5) this.renderer.shake();
       if (left <= 0) {
         clearInterval(this.timerId);
-        this._fail(`时间到！${this._goalDone(goal).ok ? '' : '就差一点点…'}`);
+        this._fail(`时间到！${this._goalDone(goal).ok ? '' : '就差一点点…'}`, 'timeup');
       }
     }, 1000);
   },
@@ -837,7 +878,7 @@ const Game = {
   _endBattle() {
     clearInterval(this.timerId);
     const b = this.battle;
-    if (!b.state.win) { this._fail(); return; }
+    if (!b.state.win) { this._fail(null, 'wipe'); return; }
     Haptics.pulse('win');
 
     // ===== 波次闯关：通关发奖励 → 三选一强化 → 下一波 =====
@@ -867,6 +908,11 @@ const Game = {
       const d = CHARACTERS.find(c => c.id === result.unlocks[0]);
       if (d) toast(`🎉 ${d.name} 解锁！`);
     }
+    T.log('level_end', {
+      level: this.level.id, win: true, stars,
+      steps: this.movesUsed, left: this.stepsLeft,
+      revived: !!this.reviveUsed,
+    });
     Bgm.stop();   // V5：胜利停 BGM，让胜利旋律独奏
     Sfx.jingle(stars >= 3 ? 'three' : 'victory');
     if (result.levelUps && Object.keys(result.levelUps).length) Sfx.play('levelup');
@@ -874,7 +920,110 @@ const Game = {
     setTimeout(() => Scenes.show('result'), 600);
   },
 
-  _fail(msg) {
+  /**
+   * 近失程度：目标完成了多少。差一点点失败是转化率最高的时刻，
+   * 所以要先把"差多少"算成一个 0~1 的数，而不是笼统写"就差一点点"。
+   */
+  _nearMissRatio() {
+    const g = this.level.goal || {};
+    const p = this.progress || {};
+    switch (g.kind) {
+      case 'score': case 'timed':
+        return g.score ? (p.score || 0) / g.score : 0;
+      case 'collect': {
+        if (Array.isArray(g.list)) {
+          return Math.max(...g.list.map(x => (p.matchedCounts[x.color] || 0) / x.count));
+        }
+        if (g.color != null) return (p.matchedCounts[g.color] || 0) / (g.count || 1);
+        const tot = Object.values(p.matchedCounts || {}).reduce((a, b) => a + b, 0);
+        return tot / (g.count || 1);
+      }
+      case 'chainClear': return (p.chainOpened || 0) / (g.count || 1);
+      case 'silentClear': return (p.silentCleared || 0) / (g.count || 1);
+      case 'clearEcho': return (p.echoCleared || 0) / (g.count || 1);
+      case 'floatClear': return (this.floatDrops || 0) / (g.count || 1);
+      case 'treasure': return (this.treasures || 0) / (g.count || 1);
+      case 'slot': return (this.slotTriggers || 0) / (g.count || 1);
+      case 'fourMatch': return (p.fourMatch || 0) / (g.count || 1);
+      case 'fiveMatch': return (p.fiveMatch || 0) / (g.count || 1);
+      case 'bombClear': return (p.bombCleared || 0) / (g.count || 1);
+      case 'enemy': {
+        const all = (this.level.enemies || []).length || 1;
+        const list = this.battle && this.battle.state ? this.battle.state.enemies : [];
+        const alive = list.filter(e => e.hp > 0).length;
+        // 打怪关看的是"敌人掉了多少血"，不是"还剩几只"
+        const totalHp = (this.level.enemies || []).reduce((a, e) => a + (e.hp || 0), 0);
+        const leftHp = list.reduce((a, e) => a + Math.max(0, e.hp || 0), 0);
+        return totalHp ? 1 - leftHp / totalHp : (all - alive) / all;
+      }
+      default: return 0;
+    }
+  },
+
+  /**
+   * 近失挽留：步数用完但目标已经推到很后面时，给一次"+5 步"的机会。
+   * 每日首次免费，之后花金币；不满足条件就直接进结算，别骚扰玩家。
+   * 返回 true 表示已接管失败流程。
+   */
+  _maybeRevive(reason) {
+    if (this.run) return false;                       // 无尽/Boss Rush 有自己的复活词条，别叠
+    if (reason !== 'steps') return false;             // 全队倒下/超时/退出都不给
+    const ratio = this._nearMissRatio();
+    if (ratio < 0.7) return false;                    // 差得远的别吊胃口，那是骗点击
+    if (this.reviveUsed) return false;                // 每关最多救一次，防无限续
+
+    const free = !T.freeReviveUsedToday();
+    const cost = 300;
+    const gold = Meta.gold;
+    const pct = Math.round(ratio * 100);
+    T.log('revive_show', { level: this.level.id, ratio: pct, free });
+
+    modalBox(`
+      <div class="mb-title">就差 ${100 - pct}%！</div>
+      <div class="mb-text">目标已经完成 ${pct}% 了。再加 5 步，把它打下来？</div>
+    `, [
+      { text: '放弃', cls: 'btn-ghost', fn: () => { T.log('revive_decline', { level: this.level.id, ratio: pct }); this._failNow(reason); } },
+      {
+        text: free ? `+5 步（今日免费）` : `+5 步（${cost} 金币）`,
+        cls: 'btn-primary',
+        fn: () => {
+          if (free) {
+            T.markFreeReviveUsed();
+          } else if (!Meta.spendGold(cost)) {
+            toast('金币不够啦');
+            this._failNow(reason);
+            return;
+          }
+          T.log('revive_tap', { level: this.level.id, ratio: pct, free });
+          this._doRevive();
+        },
+      },
+    ]);
+    return true;
+  },
+
+  /** 复活：把渲染循环和 BGM 接回来，补 5 步继续打 */
+  _doRevive() {
+    this.reviveUsed = true;
+    this.stepsLeft += 5;
+    this.battle.extraSteps += 5;
+    this.battle.state.over = false;
+    this.battle.state.win = false;
+    Sfx.play('revive');
+    this.renderer.attach(document.getElementById('board'), this.board);
+    this._startTimer();
+    Bgm.play(this._bgmKey || 'normal');
+    this.refreshBattleHUD();
+    toast('加 5 步，继续！');
+  },
+
+  _fail(msg, reason = 'steps') {
+    // 先给近失挽留一次机会；它接管了就不记失败
+    if (this._maybeRevive(reason)) return;
+    this._failNow(reason, msg);
+  },
+
+  _failNow(reason, msg) {
     this._stopAuto();
     clearInterval(this.timerId);
 
@@ -912,6 +1061,11 @@ const Game = {
       }
     }
     this.result = { win: false, stars: 0, diff, rewards: { gold: 0, candy: { small: 0 }, shards: {} }, levelUps: {}, unlocks: [] };
+    T.log('level_end', {
+      level: this.level.id, win: false, reason,
+      ratio: Math.round(this._nearMissRatio() * 100),
+      steps: this.movesUsed, revived: !!this.reviveUsed,
+    });
     Bgm.stop();   // V5：失败停 BGM
     Sfx.jingle('defeat');
     this.renderer.detach();   // V5：失败后停掉渲染循环
@@ -921,6 +1075,12 @@ const Game = {
   quitBattle() {
     this._stopAuto();
     clearInterval(this.timerId);
+    // "主动退出"占比高说明不是太难、而是太无聊或单局太长 —— 这个信号只有记下来才看得见
+    T.log('level_end', {
+      level: this.level && this.level.id, win: false, reason: 'quit',
+      ratio: this.level ? Math.round(this._nearMissRatio() * 100) : null,
+      steps: this.movesUsed, left: this.stepsLeft,
+    });
     this.renderer.setFog(false);
     this.renderer.setRowLocks([]);
     this.renderer.detach();
@@ -1024,7 +1184,7 @@ const Game = {
     const carried = run.membersHp;
     const anyAlive = carried ? Object.values(carried).some(hp => hp > 0) : true;
     if (carried && !anyAlive && run.revivesLeft <= 0) {
-      this._fail('全员倒下，本局到此结束！');
+      this._fail('全员倒下，本局到此结束！', 'wipe');
       return;
     }
     const wave = ++run.wave;

@@ -23,7 +23,15 @@ const CHAR_FILES = {
 // 敌人名关键词 → 立绘索引（assets/enemy_XX.png，顺序即优先级）
 // 索引对应预处理切图：0史莱姆 1蝙蝠 2岩石蟹 3幽灵 4风精灵 5雷云兽 6风暴鸦
 // 7云巨人 8白云 9巨龙 10狂暴巨龙 11赌王 12筹码骑士 13老虎机 14守卫 15无聊魔王
+// 16星尘傀儡 17虚空残影 18无聊之核 19梗灵试炼者（第 8 章，由 tools_prep_enemy.py 生成）
+//
+// 顺序即优先级：更具体的关键词必须排在会被它误命中的通用词之前。
+// 第 8 章四个名字都不含下面任何旧关键词，所以放最前面不会抢走原有匹配。
 const ENEMY_RULES = [
+  ['星尘傀儡', 16],
+  ['虚空残影', 17],
+  ['无聊之核', 18],
+  ['梗灵试炼者', 19],
   ['史莱姆', 0],
   ['蝠', 1],
   ['蟹', 2],
@@ -65,7 +73,9 @@ function _load(key, file) {
 export function loadArt(timeoutMs = 1200) {
   if (_promise) return _promise;
   const jobs = Object.keys(CHAR_FILES).map(k => _load('char:' + k, CHAR_FILES[k]));
-  for (let i = 0; i < 16; i++) {
+  // 敌人立绘数量：新增 enemy_XX.png 后改这里（或换成读清单），缺文件时 _load 会静默失败、
+  // 绘制端自动回退矢量，所以多写几个不会崩。
+  for (let i = 0; i < 20; i++) {
     jobs.push(_load('enemy:' + i, 'enemy_' + String(i).padStart(2, '0') + '.png'));
   }
   _promise = Promise.race([

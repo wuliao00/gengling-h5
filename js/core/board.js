@@ -96,6 +96,9 @@ export class Board {
   }
 
   // 返回一个可行交换 {r1,c1,r2,c2} 或 null
+  // 过滤条件必须与 swap() 完全一致：swap() 会拒绝 silent>0 的格，
+  // 这里原先只挡了 chain，于是提示可能指向一对**根本滑不动**的格子 ——
+  // 玩家看到"有解"却点不动，正是最招恨的冤屈感。
   useHint() {
     for (let r = 0; r < this.rows; r++) for (let c = 0; c < this.cols; c++) {
       for (const [dr, dc] of [[0, 1], [1, 0]]) {
@@ -103,6 +106,7 @@ export class Board {
         if (!this._in(r2, c2)) continue;
         const a = this.grid[r][c], b = this.grid[r2][c2];
         if (!a || !b || a.chain > 0 || b.chain > 0) continue;
+        if (a.silent > 0 || b.silent > 0) continue;
         this.grid[r][c] = b; this.grid[r2][c2] = a;
         const ok = a.special === 'rainbow' || b.special === 'rainbow' ||
           this._matchAt(r, c) || this._matchAt(r2, c2);
@@ -111,6 +115,34 @@ export class Board {
       }
     }
     return null;
+  }
+
+  /**
+   * 保证棋盘有解：洗到有合法交换为止。
+   * 光靠 shuffleAll 不够 —— 它只重排颜色，静音格的 silent 层数不变，
+   * 而 swap() 拒绝 silent>0 的格。实测第 26 关（26 个静音格）洗 8 次仍无解，
+   * 死局率 35/40 局。所以最后一步退而求其次：松动一个静音格的层，保证一定有进展。
+   * 返回本次调用产生的事件列表（可为空）。
+   */
+  ensurePlayable(maxTry = 10) {
+    const events = [];
+    if (this.useHint()) return events;
+    for (let i = 0; i < maxTry; i++) {
+      const r = this.shuffleAll();
+      if (r && r.events) for (const ev of r.events) if (ev.type === 'refill' || ev.type === 'fall') { events.push({ type: 'shuffle' }); break; }
+      if (this.useHint()) return events;
+      // 洗不出来：挑一个静音格降一层
+      let target = null;
+      for (let r2 = 0; r2 < this.rows && !target; r2++) for (let c = 0; c < this.cols && !target; c++) {
+        const cc = this.grid[r2][c];
+        if (cc && cc.silent > 0) target = cc;
+      }
+      if (!target) return events;          // 没有静音格可松，交给调用方判负
+      target.silent--;
+      if (target.silent === 0) events.push({ type: 'silentOpen', r: target.r, c: target.c });
+      if (this.useHint()) return events;
+    }
+    return events;
   }
 
   // ================= 技能/道具用原子操作（均返回 MoveResult 形状） =================

@@ -446,6 +446,26 @@ export class BoardRenderer {
       this._fitRaf = requestAnimationFrame(() => { if (this.canvas) this.fit(); });
     }
     this._fitTimer = setTimeout(() => { if (this.canvas) this.fit(); }, 80);
+    // 关键：底部 dock 的高度不是固定的 —— 带 8 个道具会排成 3 行、召唤小怪会加宽敌人条、
+    // 3 人队比 1 人队高。这些都会让 .bt-boardbox（flex:1）变矮，但窗口没 resize，
+    // 于是棋盘仍按旧高度出图，直接压到成员卡上（真机 Boss Rush 3 角色 + 8 道具复现）。
+    // 用 ResizeObserver 盯住容器，尺寸一变就重算，让布局自愈而不是靠猜时机补几次 fit()。
+    this._fitRO = null;
+    if (typeof ResizeObserver === 'function') {
+      const box = (this.canvas.closest && this.canvas.closest('.bt-boardbox')) || this.canvas.parentElement;
+      if (box) {
+        let lastH = -1;
+        try {
+          this._fitRO = new ResizeObserver(() => {
+            const h = box.clientHeight;
+            if (h === lastH) return;   // 只有真变了才重算，避免与 fit 自身形成回环
+            lastH = h;
+            this.fit();
+          });
+          this._fitRO.observe(box);
+        } catch (_) { this._fitRO = null; }
+      }
+    }
     this._running = true;
     const loop = (t) => {
       if (!this._running) return;
@@ -465,6 +485,7 @@ export class BoardRenderer {
     cancelAnimationFrame(this._raf);
     if (this._fitRaf) { cancelAnimationFrame(this._fitRaf); this._fitRaf = 0; }
     if (this._fitTimer) { clearTimeout(this._fitTimer); this._fitTimer = 0; }
+    if (this._fitRO) { try { this._fitRO.disconnect(); } catch (_) {} this._fitRO = null; }
     window.removeEventListener('resize', this._onResize);
     this.canvas = null; this.board = null; this.ctx = null;
   }
@@ -499,7 +520,7 @@ export class BoardRenderer {
       availH = box.clientHeight - outer.v - inner.v;
     }
     // 棋盘是正方形：取可用宽高的较小者；上限放宽到 640（旧版 540/460 会把大屏棋盘人为缩小）
-    const size = Math.max(160, Math.floor(Math.min(availW, availH, 640)));
+    const size = Math.max(144, Math.floor(Math.min(availW, availH, 640)));   // 下限 144：再高就宁可格子小一点，也不能让棋盘压到成员卡上
     prepCanvas(this.canvas, size, size);
     this.cssW = size; this.cssH = size;
     this._updateMetrics();
@@ -844,7 +865,11 @@ export class BoardRenderer {
       }
     }
 
-    // 回声石 / 静音区 覆盖标记（画在方块之上）
+    // 回声石 / 静音区 / 锁色 覆盖标记（画在方块之上）
+    // 锁色必须画在格子本身上：它只禁用"匹配"、不禁用"交换"，所以玩家滑得动但永远凑不成三连，
+    // 观感就是"这个颜色坏了滑不动"。光靠成员卡里一行小字提示根本注意不到（真机反馈就是这么来的）。
+    const lk = this.board && this.board.lockedColor;
+    const lkColor = lk ? lk.color : -1;
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
       const cell = g[r][c];
       if (!cell) continue;
@@ -852,6 +877,22 @@ export class BoardRenderer {
       if (cell.silent > 0) drawSilentOverlay(ctx, x, y, cs, cell.silent);
       else if (cell.echo > 0) drawEchoOverlay(ctx, x, y, cs);
       if (cell.cursed) drawCurseOverlay(ctx, x, y, cs);
+      // 被锁的颜色：压一层半透明灰罩 + 紫色描边 + 角标，一眼看出"这色暂时消不掉"
+      if (lkColor >= 0 && !cell.sub && cell.color === lkColor) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(120,110,140,.34)';
+        ctx.beginPath();
+        ctx.roundRect(x + 1, y + 1, cs - 2, cs - 2, cs * 0.24);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(232,222,255,.95)';
+        ctx.lineWidth = Math.max(1.5, cs * 0.055);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,.95)';
+        ctx.beginPath();
+        ctx.arc(x + cs * 0.78, y + cs * 0.22, cs * 0.085, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
     }
 
     // 掉落精灵（带小回弹）
