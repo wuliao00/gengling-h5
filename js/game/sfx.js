@@ -378,7 +378,7 @@ const TRACKS = {
   },
   // 普通战斗：放松专注
   normal: {
-    bpm: 132, drum: 1, pad: [45, 41, 43, 45],
+    bpm: 132, drum: 1, arp: 1, pad: [45, 41, 43, 45],
     lead: [69, 0, 72, 76, 74, 0, 72, 0, 69, 0, 72, 76, 77, 76, 74, 72,
       69, 0, 72, 76, 79, 0, 77, 76, 74, 74, 72, 71, 69, 0, 0, 0],
     bass: [45, 45, 52, 45, 41, 41, 48, 41, 43, 43, 50, 43, 45, 45, 52, 45,
@@ -388,7 +388,7 @@ const TRACKS = {
   },
   // 欢快战斗：bouncy
   upbeat: {
-    bpm: 148, drum: 1, pad: [50, 48, 46, 45],
+    bpm: 148, drum: 1, arp: 1, pad: [50, 48, 46, 45],
     lead: [74, 0, 74, 77, 76, 0, 74, 0, 72, 0, 74, 76, 77, 0, 76, 74,
       74, 0, 74, 77, 81, 0, 79, 77, 76, 76, 74, 72, 74, 0, 0, 0],
     bass: [50, 50, 57, 50, 48, 48, 55, 48, 46, 46, 53, 46, 48, 48, 55, 48,
@@ -398,7 +398,7 @@ const TRACKS = {
   },
   // 高连击：energetic sparkling
   combo: {
-    bpm: 156, drum: 1, pad: [52, 47, 45, 43],
+    bpm: 156, drum: 1, arp: 1, pad: [52, 47, 45, 43],
     lead: [76, 0, 79, 0, 83, 0, 79, 0, 81, 0, 79, 76, 78, 76, 74, 0,
       76, 0, 79, 0, 84, 0, 83, 0, 81, 79, 78, 76, 79, 0, 76, 0],
     bass: [52, 52, 59, 52, 47, 47, 54, 47, 45, 45, 52, 45, 47, 47, 54, 47,
@@ -418,7 +418,7 @@ const TRACKS = {
   },
   // 限时：urgent but cute（加轻 tick）
   time: {
-    bpm: 160, drum: 1, pad: [48, 46, 45, 43],
+    bpm: 160, drum: 1, arp: 1, pad: [48, 46, 45, 43],
     lead: [72, 72, 0, 76, 76, 0, 79, 0, 77, 77, 0, 76, 74, 0, 72, 0,
       72, 72, 0, 76, 76, 0, 81, 0, 80, 80, 0, 79, 77, 0, 76, 0],
     bass: [48, 48, 55, 48, 46, 46, 53, 46, 45, 45, 52, 45, 43, 43, 50, 43,
@@ -491,6 +491,13 @@ export const Bgm = {
   step: 0,
   nextT: 0,
   stepDur: 0.25,
+  // 战斗能量（0~1）：消除/连击经 bump() 抬升，随步衰减。
+  // 驱动 arp 层的音量与音区 —— 消得越凶，背景越"满"；停手几秒就退回底噪。
+  // 只影响标了 arp:1 的曲目（战斗曲），主页/商店那些松弛曲不受污染。
+  energy: 0,
+
+  /** 消除/技能命中时抬能量。取 max 而非累加，连锁爆发也不会顶爆响度。 */
+  bump(n = 0.4) { this.energy = Math.min(1, Math.max(this.energy, n)); },
 
   play(name) {
     this.want = name;
@@ -530,6 +537,22 @@ export const Bgm = {
         if (t.bass[i]) pluck(ctx, dest, mf(t.bass[i]), time, this.stepDur * 0.95, 0.07, { type: 'triangle', harm: 2, hvol: 0.2 });
         if (t.pad && i % 8 === 0) pad(ctx, dest, t.pad[(i / 8) % t.pad.length], time, this.stepDur * 7.6, 0.026);
         if (t.hat && t.hat[i]) poof(ctx, dest, time, 0.03, 0.012, 6000);
+        // 分解和弦：按当前小节的 pad 根音往上叠纯五度/八度（故意不放三音——
+        // 五首战斗曲调式不同，三音在个别调里会打架；纯五/八度怎么叠都协和）。
+        // 16 分密度（每 8 分步两个音），音量与音区随 energy 爬升。
+        if (t.arp) {
+          const root = t.pad[Math.floor(i / 8) % t.pad.length];
+          const tones = [root + 12, root + 19, root + 24, root + 31];
+          const order = this.energy > 0.6 ? [0, 2, 3, 1, 0, 3, 2, 1] : [0, 1, 2, 3, 2, 1, 0, 1];
+          for (let k = 0; k < 2; ++k) {
+            const tt = time + k * this.stepDur / 2;
+            const note = tones[order[(this.step * 2 + k) % order.length]];
+            bell(ctx, dest, mf(note), tt, this.stepDur * 0.38, 0.014 + 0.024 * this.energy);
+          }
+          // 每步衰减：132bpm 下实测从满到零约 19 秒（≈0.053/秒）。这个速度是有意的
+          // —— 消除节奏下能量基本维持、停手十几秒才落回底噪，音乐不随单次操作抽搐。
+          this.energy = Math.max(0, this.energy - 0.012);
+        }
         if (t.drum) {
           if (i % 8 === 0 || i % 8 === 6) this._kick(time);
           if (i % 8 === 4) this._snare(time);
