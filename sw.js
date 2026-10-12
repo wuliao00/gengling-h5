@@ -3,7 +3,7 @@
 //   代码/样式/文档（html・js・css・webmanifest）→ network-first，断网回退缓存。
 //     否则每次改皮肤/数值，老用户都会一直拿到旧缓存（cache-first 的坑）。
 //   图片等大资源 → cache-first（内容不变，省流量、可离线）。
-const CACHE = 'gengling-v17';   // v17：7 张角色立绘重修（糖果光泽风、纸糊王冠、已去水印）
+const CACHE = 'gengling-v18';   // v18：同步战斗 BGM 和声层 + 移除开发者面板死代码（公开版首个带测试的版本）
                                  // 图片走 cache-first，换素材必须 bump 这里，
                                  // 否则老用户的旧缓存会永远供旧图。
 

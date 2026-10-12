@@ -4,7 +4,6 @@ import { RNG } from './core/rng.js';
 import { Battle } from './game/battle.js';
 import { Meta } from './game/meta.js';
 import { Sfx, Bgm } from './game/sfx.js';
-import { DevGuard } from './game/devguard.js';
 import { RunMode } from './game/run-mode.js';
 import { Haptics } from './game/haptics.js';
 import * as T from './game/telemetry.js';
@@ -12,7 +11,7 @@ import { CHARACTERS } from './data/characters.js';
 import { ITEMS } from './data/items.js';
 import { BoardRenderer } from './ui/render.js';
 import { BoardInput } from './ui/input.js';
-import { Scenes, toast, updateTopbar, modalBox, goalText, showDevBan, initDevGuard } from './ui/scenes.js';
+import { Scenes, toast, updateTopbar, modalBox, goalText } from './ui/scenes.js';
 import { loadArt } from './ui/art.js';
 
 const COLOR_NAMES = ['红', '蓝', '绿', '黄', '紫', '橙'];
@@ -41,7 +40,6 @@ const Game = {
   // ============ 启动 ============
   start() {
     Meta.init();
-    initDevGuard();
     Sfx.setMuted(!!Meta.get().progress.muted);
     // 首次手势解锁音频（浏览器自动播放策略）；首个手势播开场音；UI 按钮统一点击音
     let _audioOpened = false;
@@ -476,6 +474,15 @@ const Game = {
     if (res && res.score && this.run) res = { ...res, score: Math.round(res.score * (1 + this.run.bonus('score'))) };
     const P = this.progress;
     P.score += res.score || 0;
+    // 战斗音乐能量：消得越多、连锁越深，背景越"满"（arp 音量/音区随 Bgm.energy 爬升）。
+    // 挂在 _accProgress 这个单一汇聚点上，滑动/道具/技能三条路都会经过。
+    {
+      let chain = 0;
+      for (const ev of res.events || []) chain = Math.max(chain, ev.chainIndex || 0);
+      let total = 0;
+      for (const k in (res.matchedCounts || {})) total += res.matchedCounts[k];
+      if (total > 0) Bgm.bump(Math.min(1, 0.3 + 0.02 * Math.min(total, 30) + 0.15 * chain));
+    }
     for (const [k, v] of Object.entries(res.matchedCounts || {})) {
       P.matchedCounts[k] = (P.matchedCounts[k] || 0) + v;
       P.totalCleared += v;

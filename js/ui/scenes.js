@@ -10,9 +10,7 @@ import { ITEMS, GIFTS } from '../data/items.js';
 import { Meta, EXP_TABLE, STAR_COSTS, UNLOCK_SHARDS, ENERGY_MAX } from '../game/meta.js';
 import { Save } from '../game/save.js';
 import { Sfx, Bgm } from '../game/sfx.js';
-import { DevGuard } from '../game/devguard.js';
 import { Haptics } from '../game/haptics.js';
-import * as Tele from '../game/telemetry.js';
 
 // Q 版立绘便捷封装（画进指定 canvas）
 function drawAvatarInto(canvas, charId, size, opts) {
@@ -210,7 +208,6 @@ export const Scenes = {
             <button class="btn btn-ghost" id="btnMute">🔊 音效</button>
             <button class="btn btn-ghost" id="btnHaptic">📳 震动</button>
             <button class="btn btn-ghost" id="btnReset">🗑 重置</button>
-            ${Meta.get().progress.dev && !DevGuard.isBanned() ? '<button class="btn btn-dev" id="btnDev" title="开发者面板">🛠</button>' : ''}
           </div>
         </div>
       </div>`;
@@ -234,9 +231,6 @@ export const Scenes = {
       toast('🧪 咕嘟咕嘟…体力 +10！');
       syncPotion(); upd();
     };
-    // V5 开发者面板
-    const devBtn = document.getElementById('btnDev');
-    if (devBtn) devBtn.onclick = () => askDevPassword(() => openDevPanel(this));
     drawLogo(document.getElementById('homeLogo'), 280, 131);
     drawAvatarInto(document.getElementById('homeMascot'), 'hajimiao', 120);
     const s0 = Meta.get();
@@ -894,260 +888,10 @@ function openBackpack() {
     [{ text: '关闭', cls: 'btn-ghost' }]);
 }
 
-// ============ V5 开发者模式 ============
-// 开启方式：URL ?dev=1 或连续点 5 次顶栏标题 → 露出 🛠 入口；进入面板必须输对密码。
-//
-// 防爆破与陷阱（详见 js/game/devguard.js）：
-//   · 密码不落明文，改存 PBKDF2-SHA256 哈希；校验走 WebCrypto（安全上下文才可用）
-//   · 最多 10 次，超限封禁调试入口；两次尝试间隔 <150ms 判为脚本化，直接封
-//   · 陷阱①蜜罐令牌 gengling_dev_master：正常代码只写 '0'，被改成别的值即判定篡改
-//   · 陷阱②守卫状态带签名：手改 ban:false 会让签名对不上，反手重新封禁
-//   · 陷阱③诱饵密码：命中后静默封禁 + 给一个全是哑按钮的假面板，让攻击者以为进来了
-let _devUnlocked = false;
-
-/** 入口是否已被封禁（供首页决定要不要渲染 🛠 按钮） */
-export function devEntryBanned() { return DevGuard.isBanned(); }
-
-/** 启动时调用：埋蜜罐 + 查一次篡改 */
-export function initDevGuard() {
-  DevGuard.plantCanary();
-  DevGuard.checkTamper();
-}
-
-/** 封禁页：红色警示 + 设备信息 + 本地日志摘要，并响三次警报 */
-export function showDevBan() {
-  const st = DevGuard.state();
-  const d = DevGuard.device();
-  const at = st.banAt ? new Date(st.banAt).toLocaleString('zh-CN', { hour12: false }) : '-';
-  Sfx.play('alarm');
-  setTimeout(() => Sfx.play('alarm'), 900);
-  setTimeout(() => Sfx.play('alarm'), 1800);
-  const srcName = { canary: '触碰蜜罐令牌', sig: '改动守卫状态', bot: '脚本化爆破', decoy: '命中诱饵密码' };
-  const last = st.log.length ? st.log[st.log.length - 1] : null;
-  modalBox(`
-    <div class="dev-ban">
-      <div class="dev-ban-title">⛔ 调试入口已封禁</div>
-      <div class="dev-ban-sub">${last && srcName[last.src] ? '原因：' + srcName[last.src] : `密码连续输错 ${DevGuard.MAX_FAILS} 次`}</div>
-      <div class="dev-ban-card">
-        <div class="dev-ban-row"><span>设备识别码</span><b>${esc(d.fp)}</b></div>
-        <div class="dev-ban-row"><span>机型 / 系统</span><b>${esc(d.model)}</b></div>
-        <div class="dev-ban-row"><span>平台</span><b>${esc(d.platform)}</b></div>
-        <div class="dev-ban-row"><span>屏幕</span><b>${esc(d.screen)}</b></div>
-        <div class="dev-ban-row"><span>时区</span><b>${esc(d.tz)}</b></div>
-        <div class="dev-ban-row"><span>封禁时间</span><b>${esc(at)}</b></div>
-        <div class="dev-ban-row"><span>失败记录</span><b>${st.log.length} 条（存于本机）</b></div>
-      </div>
-      <div class="dev-ban-note">该记录已写入本机日志，关闭应用再打开仍然生效。</div>
-    </div>`, [{ text: '知道了', cls: 'btn-ghost' }]);
-}
-
-/**
- * 假面板（陷阱③）：看起来就是开发者面板，但所有按钮都是哑的 ——
- * 只改自己的标签、弹一句"已生效"，不改任何真实状态。用于拖住已逆向出诱饵密码的人。
- */
-function showFakeDevPanel() {
-  const mask = modalBox(`
-    <div class="mb-title">🛠 开发者面板</div>
-    <div class="mb-text dim">已获得调试权限</div>
-    <div class="dev-btns">
-      <button class="btn btn-soft" id="fkAuto">🤖 全自动化：关</button>
-      <button class="btn btn-soft" id="fkFinish">✅ 全关卡三星通关（解锁全部章节）</button>
-      <button class="btn btn-soft" id="fkRes">💰 资源拉满（金币/体力/道具/碎片）</button>
-      <button class="btn btn-soft" id="fkChar">🌟 全角色解锁+Lv30+满星（解锁隐藏章）</button>
-      <button class="btn btn-soft" id="fkInfo">🔍 查看存档状态</button>
-    </div>`, [{ text: '收起', cls: 'btn-ghost' }]);
-  const fake = (id, fn) => { const b = mask.querySelector(id); if (b) b.onclick = fn; };
-  fake('#fkAuto', (e) => {
-    const b = e.currentTarget;
-    const on = !/开/.test(b.textContent) || /：关/.test(b.textContent);
-    b.textContent = `🤖 全自动化：${on ? '开' : '关'}`;
-    Sfx.play('tap');
-  });
-  fake('#fkFinish', () => { Sfx.play('confirm'); toast('✅ 已全三星通关，所有章节解锁！'); });
-  fake('#fkRes', () => { Sfx.play('coin'); toast('💰 资源已拉满！'); });
-  fake('#fkChar', () => { Sfx.play('confirm'); toast('🌟 全角色满配！隐藏章节已解锁'); });
-  fake('#fkInfo', () => {
-    const s = Meta.get();
-    modalBox(`<div class="mb-title">🔍 存档状态</div>
-      <div class="mb-text" style="font-size:13px;line-height:1.8">
-        关卡进度：${s.unlockedLevels}<br>金币：${s.gold} · 体力：${s.energy}/${ENERGY_MAX}
-      </div>`);
-  });
-}
-
-function askDevPassword(cb) {
-  if (_devUnlocked) { cb(); return; }
-  // 每次进门前重查篡改（可能刚有人在控制台里动过存储）
-  if (DevGuard.checkTamper() || DevGuard.isBanned()) { showDevBan(); return; }
-
-  let pwdVal = '';
-  let mask = null;
-  let busy = false;
-
-  const onTry = async () => {
-    if (busy) return;
-    busy = true;
-    const btn = mask && mask.querySelector('.modal-btns .btn-primary');
-    const label = btn ? btn.textContent : '';
-    if (btn) { btn.textContent = '校验中…'; btn.disabled = true; }
-    try {
-      const r = await DevGuard.verify(pwdVal);
-      if (r.ok) {
-        DevGuard.succeed();
-        _devUnlocked = true;
-        if (mask) mask.remove();
-        Sfx.play('confirm');
-        cb();
-        return;
-      }
-      // 陷阱③：命中诱饵密码 —— 静默封禁，然后给一个全是哑按钮的假面板
-      if (r.decoy) {
-        DevGuard.ban('decoy');
-        if (mask) mask.remove();
-        Sfx.play('confirm');
-        showFakeDevPanel();
-        return;
-      }
-      if (r.insecure) {
-        if (btn) { btn.textContent = label; btn.disabled = false; }
-        busy = false;
-        Sfx.play('invalid');
-        toast('当前环境不支持安全校验，请在 https 或本地服务器下打开');
-        return;
-      }
-      // 密码错误：计数（间隔过近会被判为脚本化并直接封禁）+ 采集设备信息入日志
-      const f = DevGuard.fail('panel');
-      if (mask) mask.remove();
-      if (f.banned) { showDevBan(); return; }
-      Sfx.play('invalid');
-      toast(f.bot ? '⚠️ 检测到异常尝试频率' : `❌ 密码错误，还剩 ${f.remaining} 次机会`);
-      askDevPassword(cb);   // 重开一次以刷新剩余次数
-    } finally {
-      if (btn && document.body.contains(btn)) { btn.textContent = label; btn.disabled = false; }
-      busy = false;
-    }
-  };
-
-  mask = modalBox(`
-    <div class="mb-title">🔒 开发者面板</div>
-    <div class="mb-text dim">请输入开发者密码</div>
-    <div class="dev-tries">剩余尝试次数 <b>${DevGuard.remaining()}</b> / ${DevGuard.MAX_FAILS}</div>
-    <input id="devPwd" type="password" class="dev-pwd" placeholder="开发者密码" autocomplete="off" />`, [
-    { text: '进入', cls: 'btn-primary', fn: onTry },
-    { text: '取消', cls: 'btn-ghost' },
-  ]);
-  const inp = mask.querySelector('#devPwd');
-  if (inp) {
-    inp.addEventListener('input', (e) => { pwdVal = e.target.value; });
-    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') onTry(); });
-    setTimeout(() => { try { inp.focus(); } catch (_) {} }, 60);
-  }
-}
-
-function openDevPanel(sc) {
-  const s = Meta.get();
-  const mask = modalBox(`
-    <div class="mb-title">🛠 开发者面板</div>
-    <div class="mb-text dim">进度 ${s.unlockedLevels} 关 · 金币 ${s.gold} · 体力 ${s.energy}/${ENERGY_MAX}</div>
-    <div class="dev-btns">
-      <button class="btn btn-soft" id="devAuto">🤖 全自动化：${sc.game && sc.game.autoFull ? '开' : '关'}</button>
-      <button class="btn btn-soft" id="devFinish">✅ 全关卡三星通关（解锁全部章节）</button>
-      <button class="btn btn-soft" id="devRes">💰 资源拉满（金币/体力/道具/碎片）</button>
-      <button class="btn btn-soft" id="devChar">🌟 全角色解锁+Lv30+满星（解锁隐藏章）</button>
-      <button class="btn btn-soft" id="devInfo">🔍 查看存档状态</button>
-      <button class="btn btn-soft" id="devTele">📊 关卡体验报表（埋点）</button>
-      <button class="btn btn-soft" id="devGuard">🔒 调试守卫状态</button>
-      <button class="btn btn-red" id="devOff">🚫 关闭开发者模式</button>
-    </div>`, [{ text: '收起', cls: 'btn-ghost' }]);
-  mask.querySelector('#devAuto').onclick = () => {
-    const on = sc.game.toggleAutoFull();
-    const b = mask.querySelector('#devAuto');
-    if (b) b.textContent = `🤖 全自动化：${on ? '开' : '关'}`;
-  };
-  mask.querySelector('#devFinish').onclick = () => {
-    const st = Meta.get();
-    for (const lv of Meta.levels) st.levelStars[lv.id] = 3;
-    st.unlockedLevels = Math.max(st.unlockedLevels, Meta.levels.length);
-    Meta.persist();
-    toast('✅ 已全三星通关，所有章节解锁！');
-    mask.remove(); sc.show('home');
-  };
-  mask.querySelector('#devRes').onclick = () => {
-    const st = Meta.get();
-    st.gold = 99999; st.energy = ENERGY_MAX; st.energyTs = Date.now();
-    for (const k of Object.keys(st.items)) st.items[k] = 99;
-    Meta.persist();
-    toast('💰 资源已拉满！');
-    mask.remove(); sc.show('home');
-  };
-  mask.querySelector('#devChar').onclick = () => {
-    const st = Meta.get();
-    for (const c of CHARACTERS) {
-      const ch = st.chars[c.id];
-      ch.unlocked = true; ch.level = 30; ch.star = 4; ch.shards = 999; ch.skillLv = 10;
-    }
-    Meta.persist();
-    toast('🌟 全角色满配！隐藏章节已解锁');
-    mask.remove(); sc.show('home');
-  };
-  mask.querySelector('#devTele').onclick = () => {
-    const rep = Tele.report();
-    modalBox(`
-      <div class="mb-title">📊 关卡体验报表</div>
-      <pre class="tele-rep">${esc(rep)}</pre>`,
-      [
-        { text: '清空埋点', cls: 'btn-red', fn: () => { Tele.clear(); toast('埋点已清空'); } },
-        { text: '复制全文', cls: 'btn-soft', fn: () => {
-            try { navigator.clipboard.writeText(rep); toast('已复制到剪贴板'); }
-            catch (_) { toast('这个环境不让复制，手动选吧'); }
-          } },
-        { text: '收起', cls: 'btn-ghost' },
-      ]);
-  };
-  mask.querySelector('#devInfo').onclick = () => {
-    const st = Meta.get();
-    const cleared = Meta.levels.filter(l => (st.levelStars[l.id] || 0) > 0).map(l => l.id);
-    const missing = Meta.levels.filter(l => !(st.levelStars[l.id] > 0)).map(l => l.id).slice(0, 20);
-    modalBox(`
-      <div class="mb-title">🔍 存档状态</div>
-      <div class="mb-text" style="font-size:13px;line-height:1.8">
-        关卡进度：${st.unlockedLevels}<br>
-        已通关卡数：${cleared.length}/${Meta.levels.length}<br>
-        缺星关卡（前20）：${missing.length ? missing.join(',') : '无'}<br>
-        金币：${st.gold} · 体力：${st.energy}/${ENERGY_MAX}<br>
-        队伍：${(st.team || []).filter(Boolean).join(',')}<br>
-        角色：${CHARACTERS.map(c => `${c.name}${st.chars[c.id].unlocked ? 'Lv' + st.chars[c.id].level : '🔒'}`).join('、')}
-      </div>`);
-  };
-  // 调试守卫状态：失败次数 + 设备信息 + 最近尝试记录（谁在试密码）
-  mask.querySelector('#devGuard').onclick = () => {
-    const st = DevGuard.state();
-    const d = DevGuard.device();
-    const rows = st.log.length
-      ? st.log.slice(-8).reverse().map(l =>
-          `<div class="dev-ban-row"><span>${esc(new Date(l.t).toLocaleString('zh-CN', { hour12: false }))}</span><b>${esc(l.fp)}</b></div>`).join('')
-      : '<div class="dev-ban-note">暂无失败记录</div>';
-    modalBox(`
-      <div class="mb-title">🔒 调试守卫状态</div>
-      <div class="dev-ban-card">
-        <div class="dev-ban-row"><span>连续失败</span><b>${st.fails} / ${DevGuard.MAX_FAILS}</b></div>
-        <div class="dev-ban-row"><span>剩余机会</span><b>${DevGuard.remaining()}</b></div>
-        <div class="dev-ban-row"><span>是否封禁</span><b>${st.ban ? '是' : '否'}</b></div>
-        <div class="dev-ban-row"><span>本机识别码</span><b>${esc(d.fp)}</b></div>
-        <div class="dev-ban-row"><span>机型 / 系统</span><b>${esc(d.model)}</b></div>
-        <div class="dev-ban-row"><span>屏幕</span><b>${esc(d.screen)}</b></div>
-      </div>
-      <div class="mb-title" style="font-size:15px;margin-top:10px">最近失败尝试</div>
-      <div class="dev-ban-card">${rows}</div>`,
-      [{ text: '关闭', cls: 'btn-ghost' }]);
-  };
-  mask.querySelector('#devOff').onclick = () => {
-    Meta.get().progress.dev = false;
-    Meta.persist();
-    toast('开发者模式已关闭');
-    mask.remove(); sc.show('home');
-  };
-}
+// ============ 关于开发者面板 ============
+// 公开版不含开发者面板与口令校验：js/game/devguard.js 只是保留同名导出的空壳，
+// 私有版调试入口的防爆破实现（含密钥/令牌/陷阱）不在本仓，故此处也不复述其机制细节。
+// 参见 js/main.js 里关于开发者入口为何移除的说明。
 
 // ============ 顶栏 ============
 export function updateTopbar() {
