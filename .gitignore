@@ -1,7 +1,22 @@
+# 依赖 / 本地环境（npm install 产物，不入库；测试只需 jsdom）
 node_modules/
-__pycache__/
+.venv/
+
+# 日志
 *.log
-.DS_Store
-Thumbs.db
+npm-debug.log*
+
+# 本地预览服务器的 Python 缓存
+__pycache__/
+
+# 助手/工具本地状态目录
 .qoder-credits/
 .mimosa/
+
+# 系统杂项
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 约定：本仓是纯前端零构建 H5，js/ css/ assets/ 与 package-lock.json 必须全部入库。
+# 不要往这里加 *.js / dist/ / build/ 之类会屏蔽源码或锁文件的规则。

@@ -1,0 +1,20 @@
+{
+  "name": "gengling-h5",
+  "version": "1.0.0",
+  "private": true,
+  "description": "梗灵大陆 —— 纯前端 ES Modules 零构建三消 Roguelite（H5 公开版）测试入口",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/engine.test.mjs && node tests/meta.test.mjs && node tests/skills.test.mjs && node tests/ui.test.mjs",
+    "test:engine": "node tests/engine.test.mjs",
+    "test:meta": "node tests/meta.test.mjs",
+    "test:skills": "node tests/skills.test.mjs",
+    "test:ui": "node tests/ui.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "jsdom": "^30.1.0"
+  }
+}
