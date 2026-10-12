@@ -5,6 +5,7 @@
 一款**纯前端 H5 三消 Roguelite**。零构建、零依赖、零外部音频资源 —— 打开 `index.html` 就能玩，离线可用。
 
 ![CI](https://github.com/wuliao00/gengling-h5/actions/workflows/codeql.yml/badge.svg)
+![tests](https://github.com/wuliao00/gengling-h5/actions/workflows/test.yml/badge.svg)
 ![language](https://img.shields.io/badge/language-JavaScript-f7df1e?logo=javascript&logoColor=black)
 ![platform](https://img.shields.io/badge/platform-Web-blue)
 ![render](https://img.shields.io/badge/render-Canvas%202D-orange)

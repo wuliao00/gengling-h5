@@ -5,6 +5,7 @@
 A **pure front-end H5 match-3 Roguelite**. Zero build step, zero dependencies, zero external audio assets — open `index.html` and play, fully offline-capable.
 
 ![CI](https://github.com/wuliao00/gengling-h5/actions/workflows/codeql.yml/badge.svg)
+![tests](https://github.com/wuliao00/gengling-h5/actions/workflows/test.yml/badge.svg)
 ![language](https://img.shields.io/badge/language-JavaScript-f7df1e?logo=javascript&logoColor=black)
 ![platform](https://img.shields.io/badge/platform-Web-blue)
 ![render](https://img.shields.io/badge/render-Canvas%202D-orange)
