@@ -11,7 +11,7 @@
 ![render](https://img.shields.io/badge/render-Canvas%202D-orange)
 ![audio](https://img.shields.io/badge/audio-WebAudio%20%E5%85%A8%E5%90%88%E6%88%90-blueviolet)
 ![deps](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)
-![license](https://img.shields.io/badge/license-%E6%9C%AA%E5%A3%B0%E6%98%8E%C2%B7%E4%BF%9D%E7%95%99%E6%89%80%E6%9C%89%E6%9D%83%E5%88%A9-lightgrey)
+![license](https://img.shields.io/badge/license-%E4%B8%8D%E5%BC%80%E6%BA%90%C2%B7%E4%BF%9D%E7%95%99%E6%89%80%E6%9C%89%E6%9D%83%E5%88%A9-red)
 
 主题是一只头顶蜂蜜罐、永远睡不醒的橘猫「哈基喵」，带六只梗灵伙伴闯八章大陆。
 
@@ -93,4 +93,10 @@ server.py               本地静态服务（禁缓存 + 大 backlog，见上文
 
 ## 许可
 
-当前仓库**未附带 LICENSE 文件，未声明任何许可证**，默认**保留所有权利**。公开仅供展示、学习与自行部署试玩；如需复用代码或商用分发，请先通过 Issue 联系作者取得授权。
+本项目**不开源**，为作者私人用途。仓库不附带 LICENSE 文件、不授予任何许可证，**保留所有权利**。
+
+公开到这里仅用于展示与作者自行部署试玩，不构成任何授权：不得复制、改写、再分发、镜像转发，
+不得用于商业或任何对外产品，也不得把其中的代码、美术与音频资源当作素材取用。
+「fork」「下载 zip」「另存网页」在技术上可行，不代表被许可。
+
+需要授权（复用、二次开发、商用）请通过 Issue 或作者联系方式另行取得书面同意。

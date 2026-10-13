@@ -11,7 +11,7 @@ A **pure front-end H5 match-3 Roguelite**. Zero build step, zero dependencies, z
 ![render](https://img.shields.io/badge/render-Canvas%202D-orange)
 ![audio](https://img.shields.io/badge/audio-WebAudio%20fully%20synthesized-blueviolet)
 ![deps](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)
-![license](https://img.shields.io/badge/license-undeclared%C2%B7all%20rights%20reserved-lightgrey)
+![license](https://img.shields.io/badge/license-not%20open%20source%C2%B7all%20rights%20reserved-red)
 
 The theme: Hajimiao — an orange tabby cat with a honey jar on its head, forever half-asleep — leading six meme-spirits (GengLings) across an eight-chapter continent.
 
@@ -93,4 +93,8 @@ The single debugging convenience left in place is the `?goto=<level id>` URL par
 
 ## License
 
-The repository currently ships **no LICENSE file and declares no license**; by default **all rights are reserved**. It is public for showcase, learning, and self-hosted play only. For code reuse or commercial distribution, please contact the author via an Issue to obtain permission first.
+This project is **not open source** and exists for the author's private use. No LICENSE file ships with it and no license is granted; **all rights are reserved**.
+
+The repository is hosted here only for showcase and for the author's own deployment and play-testing. That is not a grant of any rights: you may not copy, modify, redistribute, mirror or republish it, use it commercially or in any outward-facing product, or take its code, artwork or audio assets as source material. Being able to fork it, download the zip or save the page is a technical possibility, not permission.
+
+For reuse, derivative work or commercial use, obtain written permission from the author first via an Issue or direct contact.
