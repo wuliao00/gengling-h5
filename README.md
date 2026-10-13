@@ -11,7 +11,7 @@
 ![render](https://img.shields.io/badge/render-Canvas%202D-orange)
 ![audio](https://img.shields.io/badge/audio-WebAudio%20%E5%85%A8%E5%90%88%E6%88%90-blueviolet)
 ![deps](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)
-![license](https://img.shields.io/badge/license-%E4%B8%8D%E5%BC%80%E6%BA%90%C2%B7%E4%BF%9D%E7%95%99%E6%89%80%E6%9C%89%E6%9D%83%E5%88%A9-red)
+![license](https://img.shields.io/badge/license-MIT-green)
 
 主题是一只头顶蜂蜜罐、永远睡不醒的橘猫「哈基喵」，带六只梗灵伙伴闯八章大陆。
 
@@ -93,10 +93,11 @@ server.py               本地静态服务（禁缓存 + 大 backlog，见上文
 
 ## 许可
 
-本项目**不开源**，为作者私人用途。仓库不附带 LICENSE 文件、不授予任何许可证，**保留所有权利**。
+本项目以 **MIT License** 开源，见 [`LICENSE`](LICENSE)。
 
-公开到这里仅用于展示与作者自行部署试玩，不构成任何授权：不得复制、改写、再分发、镜像转发，
-不得用于商业或任何对外产品，也不得把其中的代码、美术与音频资源当作素材取用。
-「fork」「下载 zip」「另存网页」在技术上可行，不代表被许可。
+代码与 `assets/` 里的美术资源一并按 MIT 授权：可以自由使用、复制、修改、合并、发布、再分发，
+也可以用于商业产品，唯一条件是在副本或实质部分里保留上面的版权声明和许可声明。
+游戏内的音效与 BGM 由 WebAudio 实时合成，不含任何外部音频文件，随代码一起按 MIT 授权。
 
-需要授权（复用、二次开发、商用）请通过 Issue 或作者联系方式另行取得书面同意。
+第三方素材与商标不在本许可的覆盖范围内：MIT 只授予本仓库自带的这些文件，不代表你获得了
+任何梗图原型、角色形象或平台标识的商标权或肖像权授权；把这些原样用于对外产品前，请自行判断。

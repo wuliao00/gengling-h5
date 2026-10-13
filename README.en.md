@@ -11,7 +11,7 @@ A **pure front-end H5 match-3 Roguelite**. Zero build step, zero dependencies, z
 ![render](https://img.shields.io/badge/render-Canvas%202D-orange)
 ![audio](https://img.shields.io/badge/audio-WebAudio%20fully%20synthesized-blueviolet)
 ![deps](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)
-![license](https://img.shields.io/badge/license-not%20open%20source%C2%B7all%20rights%20reserved-red)
+![license](https://img.shields.io/badge/license-MIT-green)
 
 The theme: Hajimiao — an orange tabby cat with a honey jar on its head, forever half-asleep — leading six meme-spirits (GengLings) across an eight-chapter continent.
 
@@ -93,8 +93,8 @@ The single debugging convenience left in place is the `?goto=<level id>` URL par
 
 ## License
 
-This project is **not open source** and exists for the author's private use. No LICENSE file ships with it and no license is granted; **all rights are reserved**.
+This project is released under the **MIT License**; see [`LICENSE`](LICENSE).
 
-The repository is hosted here only for showcase and for the author's own deployment and play-testing. That is not a grant of any rights: you may not copy, modify, redistribute, mirror or republish it, use it commercially or in any outward-facing product, or take its code, artwork or audio assets as source material. Being able to fork it, download the zip or save the page is a technical possibility, not permission.
+The code and the artwork under `assets/` are MIT-licensed together: you are free to use, copy, modify, merge, publish, and redistribute them, including in commercial products. The only condition is that the copyright and permission notice are kept in all copies or substantial portions. In-game sound effects and music are synthesized live by WebAudio and ship as code rather than audio files, so they fall under the same grant.
 
-For reuse, derivative work or commercial use, obtain written permission from the author first via an Issue or direct contact.
+Third-party material and trademarks are outside the scope of this license: MIT covers the files in this repository only, and does not grant you any trademark or personality rights over the meme originals, character designs, or platform marks they riff on. Assess that yourself before reusing them in an outward-facing product.
