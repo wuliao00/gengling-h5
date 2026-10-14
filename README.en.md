@@ -11,7 +11,7 @@ A **pure front-end H5 match-3 Roguelite**. Zero build step, zero dependencies, z
 ![render](https://img.shields.io/badge/render-Canvas%202D-orange)
 ![audio](https://img.shields.io/badge/audio-WebAudio%20fully%20synthesized-blueviolet)
 ![deps](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)
-![license](https://img.shields.io/badge/license-MIT-green)
+![license](https://img.shields.io/badge/license-source%20not%20open%20source%C2%B7all%20rights%20reserved-red)
 
 The theme: Hajimiao — an orange tabby cat with a honey jar on its head, forever half-asleep — leading six meme-spirits (GengLings) across an eight-chapter continent.
 
@@ -93,8 +93,8 @@ The single debugging convenience left in place is the `?goto=<level id>` URL par
 
 ## License
 
-This project is released under the **MIT License**; see [`LICENSE`](LICENSE).
+**The source is not open source.** No LICENSE file ships with this repository and no open-source license is granted; by default **all rights are reserved**. It is published here to be read and studied, which is not a permission to reuse: do not take this code, the artwork under `assets/`, or the synthesized-audio implementation into another project or an outward-facing product, and do not republish derived or rewritten versions as your own work.
 
-The code and the artwork under `assets/` are MIT-licensed together: you are free to use, copy, modify, merge, publish, and redistribute them, including in commercial products. The only condition is that the copyright and permission notice are kept in all copies or substantial portions. In-game sound effects and music are synthesized live by WebAudio and ship as code rather than audio files, so they fall under the same grant.
+**The released builds are free to circulate.** The game's APK and the online web build are published works — downloading, installing, playing, sharing the link, or reviewing and showcasing the game needs no separate permission.
 
-Third-party material and trademarks are outside the scope of this license: MIT covers the files in this repository only, and does not grant you any trademark or personality rights over the meme originals, character designs, or platform marks they riff on. Assess that yourself before reusing them in an outward-facing product.
+For code reuse, derivative work or commercial use, ask the author for permission first via an Issue or direct contact.
