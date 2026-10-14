@@ -21,6 +21,19 @@ The theme: Hajimiao — an orange tabby cat with a honey jar on its head, foreve
 
 On a phone browser, use "Add to Home Screen / Install app" to run it as a PWA: launched fullscreen, playable offline, with its own save — same codebase as the web version.
 
+## Get the Build
+
+Besides playing online, the game also ships an Android APK and a packaged web zip, distributed through the author's own cloud-drive links:
+
+| Channel | Address | As checked this pass |
+|---|---|---|
+| Quark 夸克网盘 | https://pan.quark.cn/s/0d8beea027c8 (code `7NYF`) | Page loads; shows "shared 1 file · valid permanently" |
+| Lanzou 蓝奏云 | https://www.ilanzou.com/s/KtkK5aXA | Page loads; the actual file only shows once you press download |
+
+**Take the file name in the cloud drive as the version.** This repository is the pure-H5 source tree — it carries no `release/` directory and hosts no direct APK link, so it points at the channels rather than guaranteeing they hold the newest build. The APK and the web build are released works: downloading, installing and sharing the links needs no separate permission (see the license section at the end).
+
+Installing the APK requires allowing "install unknown apps". If a build signed with a different key is already on the device (for example a local debug package versus the CI-signed release), uninstall it first or the install will fail.
+
 ## Features
 
 - **Match-3 + turn-based RPG hybrid**: clearing tiles builds energy to cast each character's active/passive skills against enemies; per-character HP — you only lose when the whole team is down
@@ -76,7 +89,7 @@ The single debugging convenience left in place is the `?goto=<level id>` URL par
 
 - This repo is the **pure-H5 public edition**, and the only publicly maintained codebase.
 - The developer panel and its passphrase guard are **not in this repo** (the public `devguard.js` is a stub, see the section above).
-- The **native Kotlin Android rewrite**, the WebView shell project, signed APKs, and their build pipelines are all **private**; this repo contains no `android/`, no `release/`, and no corresponding workflows — don't look here for installers.
+- The **native Kotlin Android rewrite**, the WebView shell project and its signed build pipeline are all **private**; this repo contains no `android/`, no `release/` and no corresponding workflows. Installers are not in the repo — the download entry points are in "Get the Build" above.
 - The logic layers (board engine / battle / data) are decoupled from the UI, and this public repo is their authoritative source.
 
 ## Security Notes
